@@ -1,38 +1,46 @@
 # modified from phm_divesity_genelist.sh to analyse Miseq data for Severn Phage pipe libraries
 # Provide a location for the data files
-
 # modified from phm_diversity_append.sh, to work on single set of sequences from custom primer
+# modified from tri_genelist.sh, to work with NextSeq set for p3 libraries
 
 # The script evaluates quality, perform clean up (remove primer sequences at the end), puts the clean reads via tophat/hts count pipeline to evaluate number of genes (1) and number of reads for each gene (2). 
-
 # This scrip is based on  hiseq_trio/hum_cln_seq.sh, next phm_diversity.sh
 
 # START SCRIPT from within the directory
+# usage: script.sh path_to_input_files
 ############################# 
 
 
 #part1. prepare the environment for the processing.
 echo "The script_" $(basename $0) "_was started at:" $(date)
+data=$(basename $1)
 
 PDIR=$(pwd)
 
 #make processing directory to place work files
-mkdir -p /nfs/gems_sata/tedder/evgueni/anal/$(basename $PDIR)
-[ -e Processed_data ] || ln -s /nfs/gems_sata/tedder/evgueni/anal/$(basename $PDIR)/ Processed_data
+mkdir -p /nfs/gems_sata/tedder/evgueni/anal/"$data"
+[ -e Processed_data ] || ln -s /nfs/gems_sata/tedder/evgueni/anal/"$data"/ Processed_data
+
+#part1.5. pre proceessing QC: fastqc
+mkdir -p qc/qc_post
+(/home/josh/collabs/software/FastQC/fastqc -t 10 -o qc/qc_post --noextract \
+"$PDIR"/Processed_data/*/*.fastq.gz &> qc/qc_pre/preqc.log)&
+echo 'Pre-qc has started'
 
 #part2. adapter removal: cutadapt alone or wt combination with Trim Galore
 #run cutadapt
 
-for i in /home/kount002/Seq_data/Human/$(basename $PDIR)/*R1* ; do
+for i in /home/kount002/Seq_data/Human/"$data"/*R1* ; do
 si=$(basename $i) #cuts the file name
-dir=$(echo $si | cut -d "_" -f1) #cuts the sample name
+name=$(echo $si | sed -e 's/_R._[0-9]*\.fastq\.gz//')
+dir=$(echo $si | sed -e 's/_S[0-9]*_R._[0-9]*\.fastq\.gz//' -e 's/^E//' -e 's/-//g' -e 's/_//g') 
 echo "Adapter processing of ....." "$dir", "$si"
 mkdir -p "$PDIR"/Processed_data/"$dir"
 
 (
 #create input file variables
-file1=$(ls ~/Seq_data/Human/$(basename $PDIR)/"$dir"*R1*)
-file2=$(ls ~/Seq_data/Human/$(basename $PDIR)/"$dir"*R2*)
+file1=$(ls ~/Seq_data/Human/"$data"/"$name"*R1*)
+file2=$(ls ~/Seq_data/Human/"$data"/"$name"*R2*)
 
 # R1 reads use universal primers for sequencing works with compressed data
 #for R1 look for complement of 3-end of insert + Index adapter: GTTGCGGCCGCTGGATTGATCGGAAGAGCACACGTCTGAACTCCAGTCAC  ( insert sequence starts with CCATGGCCGCCGAGAAC edd to universal adapter in reverse when cleaning for R2)
