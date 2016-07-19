@@ -22,9 +22,9 @@ mkdir -p /nfs/gems_sata/tedder/evgueni/anal/"$data"
 [ -e Processed_data ] || ln -s /nfs/gems_sata/tedder/evgueni/anal/"$data"/ Processed_data
 
 #part1.5. pre proceessing QC: fastqc
-mkdir -p qc/qc_post
-(/home/josh/collabs/software/FastQC/fastqc -t 10 -o qc/qc_post --noextract \
-"$PDIR"/Processed_data/*/*.fastq.gz &> qc/qc_pre/preqc.log)&
+mkdir -p qc/qc_pre
+(/home/josh/collabs/software/FastQC/fastqc -t 10 -o qc/qc_pre --noextract \
+"$data"/*.fastq.gz &> qc/qc_pre/preqc.log)&
 echo 'Pre-qc has started'
 
 #part2. adapter removal: cutadapt alone or wt combination with Trim Galore
